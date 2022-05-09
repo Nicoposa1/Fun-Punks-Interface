@@ -6,30 +6,73 @@ import {
   Button,
   Image,
   Badge,
+  useToast,
 } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { useWeb3React } from "@web3-react/core";
 import useFunPunk from "../../hooks/useFunPunks/index";
 import { useCallback, useEffect, useState } from "react";
+import useTruncatedAddress from "../../hooks/useTruncatedAddress/index";
 
 const Home = () => {
-  const [imageSrc, setImageSrc] = useState('');
+  const [isMinting, setIsMinting] = useState(false);
+  const [availablePunks, setAvailablePunks] = useState("");
+  const [imageSrc, setImageSrc] = useState("");
   const { active, account } = useWeb3React();
   const funPunks = useFunPunk();
+  const toast = useToast();
 
   const getFunPunksData = useCallback(async () => {
-    if(funPunks) {
-      const totalSupply = await funPunks.methods.totalSupply().call()
-      const dnaPreview = await funPunks.methods.deterministicPseudoRandomDNA(totalSupply, account).call()
-
-      const image = await funPunks.methods.imageByDNA(dnaPreview).call()
-      setImageSrc(image)
+    if (funPunks) {
+      const totalSupply = await funPunks.methods.totalSupply().call();
+      const maxSupply = await funPunks.methods.maxSupply().call();
+      setAvailablePunks(maxSupply - totalSupply);
+      const dnaPreview = await funPunks.methods
+        .deterministicPseudoRandomDNA(totalSupply, account)
+        .call();
+      const image = await funPunks.methods.imageByDNA(dnaPreview).call();
+      setImageSrc(image);
     }
-  }, [funPunks, account])
+  }, [funPunks, account]);
 
   useEffect(() => {
     getFunPunksData();
   }, [getFunPunksData]);
+
+  const truncatedAddress = useTruncatedAddress(account);
+
+  const mint = () => {
+    setIsMinting(true);
+    funPunks.methods
+      .mint()
+      .send({
+        from: account,
+      })
+      .on("transactionHash", (txHash) => {
+        toast({
+          title: "Transacción enviada",
+          description: txHash,
+          status: "info",
+        });
+      })
+      .on("receipt", () => {
+        setIsMinting(false);
+        toast({
+          title: "Transacción completada",
+          description: "Eres un Fun Punk Lover",
+          status: "success",
+        });
+        getFunPunksData()
+      })
+      .on("error", (error) => {
+        setIsMinting(false);
+        toast({
+          title: "Transacción fallida",
+          description: error.message,
+          status: "error",
+        });
+      });
+  };
 
   return (
     <Stack
@@ -66,14 +109,14 @@ const Home = () => {
           </Text>
         </Heading>
         <Text color={"gray.500"}>
-          Fun Punks es una colección de Avatares randomizados cuya metadata
-          es almacenada on-chain. Poseen características únicas y sólo hay 10000
-          en existencia.
+          Fun Punks es una colección de Avatares randomizados cuya metadata es
+          almacenada on-chain. Poseen características únicas y sólo hay 10000 en
+          existencia.
         </Text>
         <Text color={"green.500"}>
-          Cada Fun Punk se genera de forma secuencial basado en tu address,
-          usa el previsualizador para averiguar cuál sería tu Fun Punk si
-          minteas en este momento
+          Cada Fun Punk se genera de forma secuencial basado en tu address, usa
+          el previsualizador para averiguar cuál sería tu Fun Punk si minteas en
+          este momento
         </Text>
         <Stack
           spacing={{ base: 4, sm: 6 }}
@@ -88,6 +131,8 @@ const Home = () => {
             bg={"green.400"}
             _hover={{ bg: "green.500" }}
             disabled={!funPunks}
+            onClick={mint}
+            isLoading={isMinting}
           >
             Obtén tu punk
           </Button>
@@ -97,6 +142,12 @@ const Home = () => {
             </Button>
           </Link>
         </Stack>
+        <Text color={"gray.500"}>
+          Fun Punks disponibles:{" "}
+          <Badge ml={1} colorScheme="green" color={"green.700"}>
+            {availablePunks}
+          </Badge>
+        </Text>
       </Stack>
       <Flex
         flex={1}
@@ -119,11 +170,16 @@ const Home = () => {
               <Badge ml={2}>
                 Address:
                 <Badge ml={1} colorScheme="green">
-                  0x0000...0000
+                  {truncatedAddress}
                 </Badge>
               </Badge>
             </Flex>
-            <Button onClick={getFunPunksData} mt={4} size="xs" colorScheme="green">
+            <Button
+              onClick={getFunPunksData}
+              mt={4}
+              size="xs"
+              colorScheme="green"
+            >
               Actualizar
             </Button>
           </>
