@@ -29,8 +29,8 @@ const Footer = () => {
         >
           <Text>
             © {new Date().getFullYear()} Original designs by
-            <Link ml={1} href="https://twitter.com/pablostanley">
-              Pablo Stanley 🎨
+            <Link ml={1} href="https://www.linkedin.com/in/nicolasposa/"  target="_blank">
+              Nicolás Posa 🎨
             </Link>
           </Text>
         </Container>

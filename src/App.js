@@ -1,12 +1,12 @@
 import { Route, Routes } from "react-router-dom";
-import { Home } from "./views/Home";
-import MainLayout from "./layouts/main/index";
+import Home from "./views/Home";
+import MainLayout from "./layouts/main";
 
 function App() {
   return (
     <MainLayout>
       <Routes>
-        <Route path="/" exact component={Home} />
+        <Route path="/" element={<Home />}></Route>
       </Routes>
     </MainLayout>
   );
