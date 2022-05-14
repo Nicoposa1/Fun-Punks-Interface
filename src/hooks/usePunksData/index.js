@@ -97,4 +97,28 @@ const usePunksData = () => {
 
 };
 
-export {usePunksData}
+const usePunkdata = (tokenId = null) => {
+  const [punk, setPunk] = useState({});
+  const [loading, setLoading] = useState(true);
+  const funPunks = useFunPunks();
+
+  const update = useCallback(async()  => {
+    if(funPunks && tokenId != null ) {
+      setLoading(true)
+
+      const toSet = await getPunkData({ tokenId, funPunks })
+      setPunk(toSet)
+
+      setLoading(false);
+    }
+  }, [funPunks, tokenId]);
+
+  useEffect(() => {
+    update()
+  }, [update])
+
+  return { punk, loading, update }
+
+}
+
+export {usePunksData, usePunkdata}

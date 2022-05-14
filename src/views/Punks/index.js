@@ -4,6 +4,7 @@ import PunkCard from "../../components/punk-card";
 import RequestAccess from "../../components/request-access";
 import Loading from "../../components/loading";
 import { usePunksData } from "../../hooks/usePunksData";
+import { Link } from "react-router-dom";
 
 const Punks = () => {
   const { active } = useWeb3React();
@@ -16,12 +17,12 @@ const Punks = () => {
       {loading ? (
         <Loading />
       ) : (
-        <Grid templateColumns="repeat(auto-fill, minmax(250px, 1fr))"  gap={6}>
-          {
-            punks.map(({ name, image, tokenId }) => 
-              <PunkCard key={tokenId} name={name} image={image}  />
-            )
-          }
+        <Grid templateColumns="repeat(auto-fill, minmax(250px, 1fr))" gap={6}>
+          {punks.map(({ name, image, tokenId }) => (
+            <Link key={tokenId}  to={`/punks/${tokenId}`}>
+              <PunkCard name={name} image={image} />
+            </Link>
+          ))}
         </Grid>
       )}
     </>
