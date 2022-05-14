@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Stack,
   Heading,
@@ -11,6 +11,7 @@ import {
   Tbody,
   Button,
   Tag,
+  useToast,
 } from "@chakra-ui/react";
 import { useWeb3React } from "@web3-react/core";
 import RequestAccess from "../../components/request-access";
@@ -18,16 +19,59 @@ import PunkCard from "../../components/punk-card";
 import { usePunkdata } from "../../hooks/usePunksData";
 import { useParams } from "react-router-dom";
 import Loading from "../../components/loading";
+import useFunPunks from "../../hooks/useFunPunks";
 
 const Punk = () => {
   const { tokenId } = useParams();
-  const { active, account } = useWeb3React();
-  const { punk, loading } = usePunkdata(tokenId);
+  const { active, account, library } = useWeb3React();
+  const { punk, loading, update } = usePunkdata(tokenId);
+  const toast = useToast();
+  const [trasfering, setTrasfering] = useState(false);
+  const funPunks = useFunPunks();
 
-  if(!active) return <RequestAccess />;
+  const transfer = () => {
+    setTrasfering(true);
 
-  if(loading) return <Loading /> 
+    const address = prompt("Ingresa la dirección: ");
 
+    const isAddress = library.utils.isAddress(address);
+
+    if (!isAddress) {
+      toast({
+        title: "Dirección inválida",
+        description: "La dirección ingresada no es válida",
+        status: "error",
+      });
+      setTrasfering(false);
+    } else {
+      funPunks.methods
+        .safeTransferFrom(punk.owner, address, punk.tokenId)
+        .send({
+          from: account,
+        })
+        .on("error", () => {setTrasfering(false);})
+        .on("transactionHash", (txHash) => {
+          toast({
+            title: "Transacción enviada",
+            description: txHash,
+            status: "info",
+          })
+        })
+        .on("receipt", () => {
+          setTrasfering(false)
+          toast({
+            title: "Transacción completada",
+            description: `El punk ha sido transferido a ${address}`,
+            status: "success",
+          })
+          update()
+        });
+    }
+  };
+
+  if (!active) return <RequestAccess />;
+
+  if (loading) return <Loading />;
 
   return (
     <Stack
@@ -44,7 +88,12 @@ const Punk = () => {
           name={punk.name}
           image={punk.image}
         />
-        <Button disabled={account !== punk.owner} colorScheme="green">
+        <Button
+          onClick={transfer}
+          disabled={account !== punk.owner}
+          colorScheme="green"
+          isLoading={trasfering}
+        >
           {account !== punk.owner ? "No eres el dueño" : "Transferir"}
         </Button>
       </Stack>
