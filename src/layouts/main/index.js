@@ -58,9 +58,8 @@ const MainLayout = ({ children }) => {
           />
           <HStack spacing={8} alignItems={"center"}>
             <Flex alignItems="center">
-              <Image src='/Fun.svg' width='40px' />
               <Heading size="md" color="#38A169" mt={0.2} ml={1}>
-                Punks
+                Fun Punks
               </Heading>
             </Flex>
             <HStack
