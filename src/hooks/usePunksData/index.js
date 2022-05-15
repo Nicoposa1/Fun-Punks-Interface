@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import useFunPunks from "../useFunPunks";
+import { useWeb3React } from "@web3-react/core";
 
 const getPunkData = async ({ funPunks, tokenId }) => {
   const [
@@ -66,35 +67,48 @@ const getPunkData = async ({ funPunks, tokenId }) => {
 };
 
 //Plural
-const usePunksData = () => {
+const usePunksData = ({ owner = null }) => {
   const [punks, setPunks] = useState([]);
+  const { library } = useWeb3React();
   const [loading, setLoading] = useState(true);
-  const funPunks = useFunPunks()
+  const funPunks = useFunPunks();
 
   const update = useCallback(async () => {
-    if(funPunks) {
+    if (funPunks) {
       setLoading(true);
 
       let tokenIds;
 
-      const totalSupply = await funPunks.methods.totalSupply().call();
-      tokenIds = new Array(Number(totalSupply)).fill().map((_, index) => index )
-      const punksPromise = tokenIds.map((tokenId) => getPunkData({ tokenId, funPunks }))
+      if(!library.utils.isAddress(owner)){
+        const totalSupply = await funPunks.methods.totalSupply().call();
+        tokenIds = new Array(Number(totalSupply)).fill().map((_, index) => index);
+      }else {
+        const balanceOf = await funPunks.methods.balanceOf(owner).call();
+
+        const tokenIdsOfOwner = new Array(Number(balanceOf)).fill().map((_, index) => 
+          funPunks.methods.tokenOfOwnerByIndex(owner, index).call()
+        )
+
+        tokenIds = await Promise.all(tokenIdsOfOwner)
+      }
+
+      const punksPromise = tokenIds.map((tokenId) =>
+        getPunkData({ tokenId, funPunks })
+      );
 
       const punks = await Promise.all(punksPromise);
 
-      setPunks(punks)
+      setPunks(punks);
 
       setLoading(false);
     }
-  }, [funPunks]) 
+  }, [funPunks, owner, library?.utils]);
 
   useEffect(() => {
-    update()
-  }, [update])
+    update();
+  }, [update]);
 
-  return { punks, loading, update }
-
+  return { punks, loading, update };
 };
 
 const usePunkdata = (tokenId = null) => {
@@ -102,23 +116,22 @@ const usePunkdata = (tokenId = null) => {
   const [loading, setLoading] = useState(true);
   const funPunks = useFunPunks();
 
-  const update = useCallback(async()  => {
-    if(funPunks && tokenId != null ) {
-      setLoading(true)
+  const update = useCallback(async () => {
+    if (funPunks && tokenId != null) {
+      setLoading(true);
 
-      const toSet = await getPunkData({ tokenId, funPunks })
-      setPunk(toSet)
+      const toSet = await getPunkData({ tokenId, funPunks });
+      setPunk(toSet);
 
       setLoading(false);
     }
   }, [funPunks, tokenId]);
 
   useEffect(() => {
-    update()
-  }, [update])
+    update();
+  }, [update]);
 
-  return { punk, loading, update }
+  return { punk, loading, update };
+};
 
-}
-
-export {usePunksData, usePunkdata}
+export { usePunksData, usePunkdata };
