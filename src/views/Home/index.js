@@ -105,7 +105,7 @@ const Home = () => {
           </Text>
           <br />
           <Text as={"span"} color={"green.400"}>
-            nunca para de aprender
+            nunca parar de aprender
           </Text>
         </Heading>
         <Text color={"gray.500"}>
